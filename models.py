@@ -49,3 +49,7 @@ class KayitIstek(SQLModel):
 class GirisIstek(SQLModel):
     kullanici_adi: str
     sifre: str
+
+class YazarEkle(SQLModel):
+    ad: str
+    soyad: str
