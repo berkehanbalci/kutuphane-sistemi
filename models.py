@@ -40,4 +40,12 @@ class OduncKayitlar(SQLModel, table=True):
     iade_edildi_mi: bool = Field(default=False)
 
     kitap: Optional["Kitap"] = Relationship(back_populates="odunc_kayitlari")
-    uye: Optional["Uye"] = Relationship(back_populates="odunc_kayitlari")   
+    uye: Optional["Uye"] = Relationship(back_populates="odunc_kayitlari")
+
+class KayitIstek(SQLModel):
+    kullanici_adi: str
+    sifre: str
+
+class GirisIstek(SQLModel):
+    kullanici_adi: str
+    sifre: str
