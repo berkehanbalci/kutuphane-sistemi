@@ -53,3 +53,8 @@ class GirisIstek(SQLModel):
 class YazarEkle(SQLModel):
     ad: str
     soyad: str
+
+class KitapEkle(SQLModel):
+    baslik: str
+    stok_adedi: int
+    yazar_id: int
