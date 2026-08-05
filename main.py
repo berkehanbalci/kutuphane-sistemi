@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Depends
 from sqlmodel import Session, select
 from database import veritabani_hazirla, get_session
-from models import Yazar, Kitap, Uye, OduncKayitlar, YazarEkle, KitapEkle
+from models import Yazar, Kitap, Uye, OduncKayitlar, YazarEkle, KitapEkle, UyeEkle
 from auth import router as auth_router, token_dogrula
 
 app = FastAPI()
@@ -108,3 +108,50 @@ def kitap_sil(kitap_id: int, kullanici_adi: str = Depends(token_dogrula), sessio
     session.delete(kitap)
     session.commit()
     return {"mesaj": f"{kitap_id} numaralı kitap silindi"}
+
+@app.get("/uyeler")
+def uyeleri_listele(session: Session = Depends(get_session)):
+    sorgu = select(Uye)
+    uyeler = session.exec(sorgu).all()
+    return uyeler
+
+@app.get("/uyeler/{uye_id}")
+def uye_bilgisi(uye_id: int, session: Session = Depends(get_session)):
+    uye = session.get(Uye, uye_id)
+
+    if uye is None:
+        raise HTTPException(status_code=404, detail="Üye bulunamadı!")
+    
+    return uye
+
+@app.post("/uyeler")
+def uye_ekle(istek: UyeEkle, kullanici_adi: str = Depends(token_dogrula), session: Session = Depends(get_session)):
+    sorgu = select(Uye).where(Uye.mail == istek.mail)
+    mevcut = session.exec(sorgu).first()
+
+    if mevcut:
+        raise HTTPException(status_code=409, detail="Bu mail adresi zaten kayıtlı!")
+
+    yeni_uye = Uye(ad=istek.ad, soyad=istek.soyad, mail=istek.mail)
+    session.add(yeni_uye)
+    session.commit()
+    session.refresh(yeni_uye)
+
+    return {"mesaj": f"{yeni_uye.ad} {yeni_uye.soyad} sisteme eklendi", "uye": yeni_uye}
+
+@app.delete("/uyeler/{uye_id}")
+def uye_sil(uye_id: int, kullanici_adi: str = Depends(token_dogrula), session: Session = Depends(get_session)):
+    uye = session.get(Uye, uye_id)
+
+    if uye is None:
+        raise HTTPException(status_code=404, detail="Üye bulunamadı!")
+    
+    sorgu = select(OduncKayitlar).where(OduncKayitlar.uye_id == uye_id)
+    bagli_kayit = session.exec(sorgu).first()
+
+    if bagli_kayit:
+        raise HTTPException(status_code=409, detail="Bu üyeye ait ödünç kayıtları var, önce onları silin!")
+
+    session.delete(uye)
+    session.commit()
+    return {"mesaj": f"{uye_id} numaralı üye silindi"}

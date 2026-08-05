@@ -1,6 +1,7 @@
 from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, List
 from datetime import date
+from pydantic import EmailStr
 
 class Yonetici(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -58,3 +59,8 @@ class KitapEkle(SQLModel):
     baslik: str
     stok_adedi: int
     yazar_id: int
+
+class UyeEkle(SQLModel):
+    ad: str
+    soyad: str
+    mail: EmailStr
