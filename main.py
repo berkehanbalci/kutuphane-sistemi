@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Depends
 from sqlmodel import Session, select
 from database import veritabani_hazirla, get_session
-from models import Yazar, Kitap, Uye, OduncKayitlar, YazarEkle, KitapEkle, UyeEkle, OduncKayitEkle
+from models import Yazar, Kitap, Uye, OduncKayitlar, YazarEkle, KitapEkle, UyeEkle, OduncKayitEkle, YazarGuncelle, KitapGuncelle, UyeGuncelle
 from auth import router as auth_router, token_dogrula
 from datetime import date
 
@@ -104,7 +104,7 @@ def kitap_sil(kitap_id: int, kullanici_adi: str = Depends(token_dogrula), sessio
     sorgu = select(OduncKayitlar).where(OduncKayitlar.kitap_id == kitap_id)
     bagli_kayit = session.exec(sorgu).first()
     if bagli_kayit:
-        raise HTTPException(status_code=409, detail="Bu kitaba ait ödünç kayıtları var, önce onları silin!")
+        raise HTTPException(status_code=409, detail="Bu kitaba ait ödünç kayıtları var, önce onları güncelleyin!")
 
     session.delete(kitap)
     session.commit()
@@ -151,7 +151,7 @@ def uye_sil(uye_id: int, kullanici_adi: str = Depends(token_dogrula), session: S
     bagli_kayit = session.exec(sorgu).first()
 
     if bagli_kayit:
-        raise HTTPException(status_code=409, detail="Bu üyeye ait ödünç kayıtları var, önce onları silin!")
+        raise HTTPException(status_code=409, detail="Bu üyeye ait ödünç kayıtları var, önce onları güncelleyin!")
 
     session.delete(uye)
     session.commit()
@@ -222,3 +222,60 @@ def iade_et(kayit_id: int, kullanici_adi: str = Depends(token_dogrula), session:
     session.commit()
 
     return {"mesaj": f"{kitap.baslik} kitabı iade edildi"}
+
+@app.put("/yazarlar/guncelle/{yazar_id}")
+def yazari_guncelle(istek: YazarGuncelle, yazar_id: int, kullanici_adi: str = Depends(token_dogrula), session: Session = Depends(get_session)):
+    yazar = session.get(Yazar, yazar_id)
+
+    if yazar is None:
+        raise HTTPException(status_code=404, detail=f"{yazar_id} id'li yazar bulunamadı!")
+
+    yazar.ad = istek.ad
+    yazar.soyad = istek.soyad
+
+    session.commit()
+
+    return {"mesaj": f"{yazar.id} id'li yazar güncellendi"}
+
+@app.put("/kitaplar/guncelle/{kitap_id}")
+def kitabi_guncelle(istek: KitapGuncelle, kitap_id: int, kullanici_adi: str = Depends(token_dogrula), session: Session = Depends(get_session)):
+    kitap = session.get(Kitap, kitap_id)
+
+    if kitap is None:
+        raise HTTPException(status_code=404, detail=f"{kitap_id} id'li kitap bulunamadı!")
+
+    yazar = session.get(Yazar, istek.yazar_id)
+    if yazar is None:
+        raise HTTPException(status_code=404, detail=f"{istek.yazar_id} id'li yazar bulunamadı!")
+
+    sorgu = select(OduncKayitlar).where(
+        OduncKayitlar.kitap_id == kitap_id,
+        OduncKayitlar.iade_edildi_mi == False)
+
+    aktif_kayit = session.exec(sorgu).first()
+
+    if aktif_kayit:
+        raise HTTPException(status_code=409, detail="Bu kitabın kayıtlı ödünçleri var, önce onları güncelleyin!")
+
+    kitap.baslik = istek.baslik
+    kitap.stok_adedi = istek.stok_adedi
+    kitap.yazar_id = istek.yazar_id
+
+    session.commit()
+
+    return {"mesaj": f"{kitap_id} id'li kitap güncellendi"}
+
+@app.put("/uyeler/guncelle/{uye_id}")
+def uye_guncelle(istek: UyeGuncelle, uye_id: int, kullanici_adi: str = Depends(token_dogrula), session: Session = Depends(get_session)):
+    uye = session.get(Uye, uye_id)
+
+    if uye is None:
+        raise HTTPException(status_code=404, detail=f"{uye_id} id'li üye bulunamadı!")
+
+    uye.ad = istek.ad
+    uye.soyad = istek.soyad
+    uye.mail = istek.mail
+
+    session.commit()
+
+    return {"mesaj": f"{uye_id} id'li üye güncellendi"}
