@@ -68,3 +68,17 @@ class UyeEkle(SQLModel):
 class OduncKayitEkle(SQLModel):
     kitap_id: int
     uye_id: int
+
+class YazarGuncelle(SQLModel):
+    ad: str
+    soyad: str
+
+class KitapGuncelle(SQLModel):
+    baslik: str
+    stok_adedi: int
+    yazar_id: int
+
+class UyeGuncelle(SQLModel):
+    ad: str
+    soyad: str
+    mail: EmailStr
