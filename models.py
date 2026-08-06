@@ -64,3 +64,7 @@ class UyeEkle(SQLModel):
     ad: str
     soyad: str
     mail: EmailStr
+
+class OduncKayitEkle(SQLModel):
+    kitap_id: int
+    uye_id: int

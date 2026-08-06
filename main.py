@@ -1,8 +1,9 @@
 from fastapi import FastAPI, HTTPException, Depends
 from sqlmodel import Session, select
 from database import veritabani_hazirla, get_session
-from models import Yazar, Kitap, Uye, OduncKayitlar, YazarEkle, KitapEkle, UyeEkle
+from models import Yazar, Kitap, Uye, OduncKayitlar, YazarEkle, KitapEkle, UyeEkle, OduncKayitEkle
 from auth import router as auth_router, token_dogrula
+from datetime import date
 
 app = FastAPI()
 
@@ -155,3 +156,69 @@ def uye_sil(uye_id: int, kullanici_adi: str = Depends(token_dogrula), session: S
     session.delete(uye)
     session.commit()
     return {"mesaj": f"{uye_id} numaralı üye silindi"}
+
+@app.get("/odunc-kayitlari")
+def odunc_kayitlarini_listele(session: Session = Depends(get_session)):
+    sorgu = select(OduncKayitlar)
+    kayitlar = session.exec(sorgu).all()
+    return kayitlar
+
+@app.get("/odunc-kayitlari/{kayit_id}")
+def odunc_kayit_bilgisi(kayit_id: int, session: Session = Depends(get_session)):
+    kayit = session.get(OduncKayitlar, kayit_id)
+
+    if kayit is None:
+        raise HTTPException(status_code=404, detail="Ödünç kaydı bulunamadı!")
+
+    return kayit
+
+@app.post("/odunc-kayitlari")
+def odunc_ver(istek: OduncKayitEkle, kullanici_adi: str = Depends(token_dogrula), session: Session = Depends(get_session)):
+    kitap = session.get(Kitap, istek.kitap_id)
+
+    if kitap is None:
+        raise HTTPException(status_code=404, detail=f"{istek.kitap_id} id'li kitap bulunamadı!")
+
+    uye = session.get(Uye, istek.uye_id)
+
+    if uye is None:
+        raise HTTPException(status_code=404, detail=f"{istek.uye_id} id'li üye bulunamadı!")
+
+    if kitap.stok_adedi <= 0:
+        raise HTTPException(status_code=409, detail="Bu kitap şu an stokta yok!")
+
+    yeni_kayit = OduncKayitlar(
+        kitap_id = istek.kitap_id,
+        uye_id = istek.uye_id,
+        alis_tarihi = date.today(),
+        iade_edildi_mi = False
+    )
+
+    kitap.stok_adedi -= 1
+
+    session.add(yeni_kayit)
+    session.commit()
+    session.refresh(yeni_kayit)
+
+    return {"mesaj": f"{kitap.baslik} kitabı {uye.ad} {uye.soyad} üyesine verildi", "kayit": yeni_kayit}
+
+
+@app.put("/odunc-kayitlari/iade/{kayit_id}")
+def iade_et(kayit_id: int, kullanici_adi: str = Depends(token_dogrula), session: Session = Depends(get_session)):
+    kayit = session.get(OduncKayitlar, kayit_id)
+
+    if kayit is None:
+        raise HTTPException(status_code=404, detail="Ödünç kaydı bulunamadı!")
+
+    if kayit.iade_edildi_mi:
+        raise HTTPException(status_code=409, detail="Bu kitap zaten iade edilmiş!")
+
+    kitap = session.get(Kitap, kayit.kitap_id)
+
+    kayit.iade_edildi_mi = True
+    kayit.iade_tarihi = date.today()
+    kitap.stok_adedi += 1
+
+    session.commit()
+
+    return {"mesaj": f"{kitap.baslik} kitabı iade edildi"}
