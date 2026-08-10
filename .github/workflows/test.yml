@@ -46,4 +46,4 @@ jobs:
           PGPASSWORD=test_sifre psql -h localhost -U postgres -c "CREATE DATABASE kutuphane_test_db;"
       
       - name: Testleri çalıştır
-        run: pytest -v
+        run: python -m pytest -v
