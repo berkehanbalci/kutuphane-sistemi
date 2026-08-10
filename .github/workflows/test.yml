@@ -1,0 +1,49 @@
+name: Testler
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_sifre
+          POSTGRES_DB: kutuphane_db
+        ports:
+        - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_NAME: kutuphane_db
+      DB_USER: postgres
+      DB_PASSWORD: test_sifre
+      GIZLI_ANAHTAR: test_icin_rastgele_bir_anahtar
+  
+    steps:
+      - name: Kodu indir
+        uses: actions/checkout@v4
+
+      - name: Python kur
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Bağımlılıkları kur
+        run: pip install -r requirements.txt
+    
+      - name: Test veritabanı oluştur
+        run: |
+          sudo apt-get install -y postgresql-client
+          PGPASSWORD=test_sifre psql -h localhost -U postgres -c "CREATE DATABASE kutuphane_test_db;"
+      
+      - name: Testleri çalıştır
+        run: python -m pytest -v
