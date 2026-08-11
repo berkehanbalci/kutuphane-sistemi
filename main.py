@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Depends
+from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
 from database import veritabani_hazirla, get_session
 from models import Yazar, Kitap, Uye, OduncKayitlar, YazarEkle, KitapEkle, UyeEkle, OduncKayitEkle, YazarGuncelle, KitapGuncelle, UyeGuncelle
@@ -7,6 +8,13 @@ from datetime import date
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 veritabani_hazirla()
 
 app.include_router(auth_router)
