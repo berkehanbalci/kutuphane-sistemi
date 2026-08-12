@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-function KayitSayfasi() {
+function KayitSayfasi({ girisSayfasinaGit }) {
     const [kullaniciAdi, setKullaniciAdi] = useState("")
     const [sifre, setSifre] = useState("")
     const [mesaj, setMesaj] = useState("")
@@ -16,7 +16,7 @@ function KayitSayfasi() {
         })
         if (cevap.ok) {
             const veri = await cevap.json()
-            setMesaj("Kayit Başarılı!")
+            setMesaj("Kayıt Başarılı!")
         } else{
             setMesaj("Kullanici adi zaten mevcut!")
         }
@@ -25,7 +25,7 @@ function KayitSayfasi() {
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100">
             <div className="bg-white p-8 rounded-lg shadow-md w-80">
-                <h1 className="text-2xl font-bold mb-8 text-gray-800">Kayit</h1>
+                <h1 className="text-2xl font-bold mb-8 text-gray-800">Kayıt</h1>
 
                 <input
                     type="text"
@@ -53,6 +53,11 @@ function KayitSayfasi() {
                     {mesaj}
                     </p>
                 )}
+                <button
+                    onClick={girisSayfasinaGit}
+                    className="w-full text-blue-600 text-sm mt-3 hover:underline">
+                    Zaten hesabın var mı? Giriş yap
+                </button>
             </div>
         </div>
     )

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-function App() {
+function GirisSayfasi({ onBasarili, kayitSayfasinaGit }) {
   const [kullaniciAdi, setKullaniciAdi] = useState("")
   const [sifre, setSifre] = useState("")
   const [mesaj, setMesaj] = useState("")
@@ -16,7 +16,7 @@ function App() {
     })
     if (cevap.ok) {
       const veri = await cevap.json()
-      setMesaj("Giriş Başarılı!")
+      onBasarili(veri.access_token)
     } else {
       setMesaj("Kullanıcı adı veya şifre hatalı!")
     }
@@ -53,6 +53,12 @@ function App() {
           <p className="mt-4 text-center text-sm text-gray-700">{mesaj}
           </p>
           )}
+        
+        <button
+          onClick={kayitSayfasinaGit}
+          className="w-full text-blue-600 text-sm mt-3 hover:underline">
+          Hesabın yok mu? Kayıt ol
+        </button>
 
       </div>
 
@@ -63,4 +69,4 @@ function App() {
   )
 }
 
-export default App
+export default GirisSayfasi
