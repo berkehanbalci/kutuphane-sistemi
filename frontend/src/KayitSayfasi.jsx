@@ -15,8 +15,10 @@ function KayitSayfasi({ girisSayfasinaGit }) {
             })
         })
         if (cevap.ok) {
-            const veri = await cevap.json()
-            setMesaj("Kayıt Başarılı!")
+            setMesaj("Kayıt Başarılı! Giriş sayfasına yönlendiriliyorsunuz...")
+            setTimeout(() => {
+                girisSayfasinaGit()
+            }, 1500)
         } else{
             setMesaj("Kullanici adi zaten mevcut!")
         }
