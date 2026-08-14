@@ -12,7 +12,7 @@ function App() {
   }
 
   if (token) {
-    return <Anasayfa />
+    return <Anasayfa token={token} />
   }
 
   if (sayfa === "kayit") {
