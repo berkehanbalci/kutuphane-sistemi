@@ -72,7 +72,17 @@ def yazar_sil(yazar_id: int, kullanici_adi: str = Depends(token_dogrula), sessio
 def kitaplari_listele(session: Session = Depends(get_session)):
     sorgu = select(Kitap)
     kitaplar = session.exec(sorgu).all()
-    return kitaplar
+    
+    sonuc = []
+    for kitap in kitaplar:
+        sonuc.append({
+            "id": kitap.id,
+            "baslik": kitap.baslik,
+            "stok_adedi": kitap.stok_adedi,
+            "yazar_id": kitap.yazar_id,
+            "yazar_adi": f"{kitap.yazar.ad} {kitap.yazar.soyad}"
+        })
+    return sonuc
 
 @app.get("/kitaplar/{kitap_id}")
 def kitap_bilgisi(kitap_id: int, session: Session = Depends(get_session)):
