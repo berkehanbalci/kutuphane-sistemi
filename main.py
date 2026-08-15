@@ -132,7 +132,24 @@ def kitap_sil(kitap_id: int, kullanici_adi: str = Depends(token_dogrula), sessio
 def uyeleri_listele(session: Session = Depends(get_session)):
     sorgu = select(Uye)
     uyeler = session.exec(sorgu).all()
-    return uyeler
+    
+    sonuc = []
+    for uye in uyeler:
+        kayitlar = []
+
+        for kayit in uye.odunc_kayitlari:
+            kayitlar.append({
+                "kitap_baslik": kayit.kitap.baslik,
+                "iade_edildi_mi": kayit.iade_edildi_mi
+            })
+        sonuc.append({
+            "id": uye.id,
+            "ad": uye.ad,
+            "soyad": uye.soyad,
+            "mail": uye.mail,
+            "odunc_kitaplari": kayitlar
+        })
+    return sonuc
 
 @app.get("/uyeler/{uye_id}")
 def uye_bilgisi(uye_id: int, session: Session = Depends(get_session)):
