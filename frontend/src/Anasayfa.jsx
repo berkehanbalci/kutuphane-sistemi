@@ -12,11 +12,16 @@ function Anasayfa({ token }) {
   const [yeniUyeAd, setYeniUyeAd] = useState("")
   const [yeniUyeSoyad, setYeniUyeSoyad] = useState("")
   const [yeniUyeMail, setYeniUyeMail] = useState("")
+  const [oduncKayitlari, setOduncKayitlari] = useState([])
+  const [seciliKitapId, setSeciliKitapId] = useState("")
+  const [seciliUyeId, setSeciliUyeId] = useState("")
 
   const yazarlariGetir = async () => {
     const cevap = await fetch("http://localhost:8000/yazarlar")
-    const veri = await cevap.json()
-    setYazarlar(veri)
+    if (cevap.ok) {
+      const veri = await cevap.json()
+      setYazarlar(veri)
+    }
   }
 
   const kitaplariGetir = async () => {
@@ -31,10 +36,17 @@ function Anasayfa({ token }) {
     setUyeler(veri)
   }
 
+  const oduncKayitlariGetir = async () => {
+    const cevap = await fetch("http://localhost:8000/odunc-kayitlari")
+    const veri  = await cevap.json()
+    setOduncKayitlari(veri)
+  }
+
   useEffect(() => {
     yazarlariGetir()
     kitaplariGetir()
     uyeleriGetir()
+    oduncKayitlariGetir()
   }, [])
 
   const yazarEkle = async () => {
@@ -89,10 +101,45 @@ function Anasayfa({ token }) {
     if (cevap.ok) {
       setYeniBaslik("")
       setYeniStok("")
-      setseciliYazarId("")
+      setSeciliYazarId("")
       kitaplariGetir()
     }
   }
+
+  const oduncVer = async () => {
+    const cevap = await fetch("http://localhost:8000/odunc-kayitlari", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        kitap_id: parseInt(seciliKitapId),
+        uye_id: parseInt(seciliUyeId)
+      })
+    })
+    if (cevap.ok) {
+      setSeciliKitapId("")
+      setSeciliUyeId("")
+      oduncKayitlariGetir()
+      kitaplariGetir()
+      uyeleriGetir()
+    }
+  }
+  const iadeEt = async (kayitId) => {
+    const cevap = await fetch(`http://localhost:8000/odunc-kayitlari/iade/${kayitId}`, {
+      method: "PUT",
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    })
+    if (cevap.ok) {
+      oduncKayitlariGetir()
+      kitaplariGetir()
+      uyeleriGetir()
+    }
+    }
+  
 
  return (
   <div className="min-h-screen bg-gray-100 p-8">
@@ -129,16 +176,77 @@ function Anasayfa({ token }) {
 
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-bold mb-4 text-gray-800">Yazarlar</h2>
-          {yazarlar.length === 0 && (
+          {yazarlar?.length === 0 && (
             <p className="text-gray-500">Henüz Yazar Eklenmemiş</p>
           )}
-          {yazarlar.map((yazar) => (
+          {yazarlar?.map((yazar) => (
             <div key={yazar.id} className="border-b border-gray-200 py-2">
               {yazar.ad} {yazar.soyad}
             </div>
           ))}
         </div>
+        <div className="bg-white rounded-lg shadow-md p-6 mt-6">
+          <h2 className="text-xl font-bold mb-4 text-gray-800">Ödünç Ver</h2>
+
+          <select
+            value={seciliKitapId}
+            onChange={(e) => setSeciliKitapId(e.target.value)}
+            className="w-full border border-gray-300 rounded p-2 mb-3"
+          >
+            <option value="">Kitap Seçin</option>
+            {kitaplar?.map((kitap) => (
+              <option key={kitap.id} value={kitap.id}>
+                {kitap.baslik}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={seciliUyeId}
+            onChange={(e) => setSeciliUyeId(e.target.value)}
+            className="w-full border border-gray-300 rounded p-2 mb-3"
+          >
+            <option value="">Üye Seçin</option>
+            {uyeler?.map((uye) => (
+              <option key={uye.id} value={uye.id}>
+                {uye.ad} {uye.soyad}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={oduncVer}
+            className="w-full bg-blue-600 text-white rounded p-2 font-semibold hover:bg-blue-700"
+            >
+              Ödünç Ver
+          </button>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-md p-6 mt-6">
+          <h2 className="text-xl font-bold mb-4 text-gray-800">Ödünç Kayıtları</h2>
+          {oduncKayitlari?.length === 0 && (
+            <p className="text-gray-500">Henüz Ödünç Kaydı Yok</p>
+          )}
+          {oduncKayitlari?.filter((kayit) => !kayit.iade_edildi_mi).map((kayit) => (
+            <div key={kayit.id} className="border-b border-gray-200 py-2">
+              <div className="text-sm">
+                <span className="font-semibold">{kayit.kitap_baslik}</span>
+                <span className="text-gray-500"> — {kayit.uye_adi}</span> 
+              </div>
+              {kayit.iade_edildi_mi ? (
+                <span className="text-xs text-green-600">İade Edildi</span>
+              ) : (
+                <button
+                onClick={() => iadeEt(kayit.id)}
+                className="text-xs text-blue-600 hover:underline"
+                >
+                  İade Et
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
+      
 
       <div>
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -261,5 +369,4 @@ function Anasayfa({ token }) {
   </div>
   )
 }
-
 export default Anasayfa
