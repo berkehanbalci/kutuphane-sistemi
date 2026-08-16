@@ -196,7 +196,17 @@ def uye_sil(uye_id: int, kullanici_adi: str = Depends(token_dogrula), session: S
 def odunc_kayitlarini_listele(session: Session = Depends(get_session)):
     sorgu = select(OduncKayitlar)
     kayitlar = session.exec(sorgu).all()
-    return kayitlar
+    
+    sonuc = []
+    for kayit in kayitlar:
+        sonuc.append({
+            "id": kayit.id,
+            "kitap_baslik": kayit.kitap.baslik,
+            "uye_adi": f"{kayit.uye.ad} {kayit.uye.soyad}",
+            "alis_tarihi": kayit.alis_tarihi,
+            "iade_edildi_mi": kayit.iade_edildi_mi
+        })
+    return sonuc
 
 @app.get("/odunc-kayitlari/{kayit_id}")
 def odunc_kayit_bilgisi(kayit_id: int, session: Session = Depends(get_session)):
@@ -209,6 +219,16 @@ def odunc_kayit_bilgisi(kayit_id: int, session: Session = Depends(get_session)):
 
 @app.post("/odunc-kayitlari")
 def odunc_ver(istek: OduncKayitEkle, kullanici_adi: str = Depends(token_dogrula), session: Session = Depends(get_session)):
+    sorgu = select(OduncKayitlar).where(
+        OduncKayitlar.kitap_id == istek.kitap_id,
+        OduncKayitlar.uye_id == istek.uye_id,
+        OduncKayitlar.iade_edildi_mi == False
+    )
+    aktif_kayit = session.exec(sorgu).first()
+
+    if aktif_kayit:
+        raise HTTPException(status_code=409, detail="Bu üye, bu kitabı zaten ödünç almış!")
+    
     kitap = session.get(Kitap, istek.kitap_id)
 
     if kitap is None:
