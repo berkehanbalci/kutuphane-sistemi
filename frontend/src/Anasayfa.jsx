@@ -15,6 +15,9 @@ function Anasayfa({ token }) {
   const [oduncKayitlari, setOduncKayitlari] = useState([])
   const [seciliKitapId, setSeciliKitapId] = useState("")
   const [seciliUyeId, setSeciliUyeId] = useState("")
+  const [duzenlenenYazarId, setDuzenlenenYazarId] = useState(null)
+  const [duzenAd, setDuzenAd] = useState("")
+  const [duzenSoyad, setDuzenSoyad] = useState("")
 
   const yazarlariGetir = async () => {
     const cevap = await fetch("http://localhost:8000/yazarlar")
@@ -138,7 +141,50 @@ function Anasayfa({ token }) {
       kitaplariGetir()
       uyeleriGetir()
     }
+  }
+
+  const yazarSil = async (yazarId) => {
+    const onay = window.confirm("Bu yazarı silmek istediğinize emin misiniz?")
+    if (!onay) return
+
+    const cevap = await fetch(`http://localhost:8000/yazarlar/${yazarId}`, {
+      method: "DELETE",
+      headers: { "Authorization": `Bearer ${token}` }
+    })
+    if (cevap.ok) {
+      yazarlariGetir()
+    } else {
+      const hata = await cevap.json()
+      alert(hata.detail)
     }
+  }
+  const yazarGuncelle = async () => {
+    const cevap = await fetch(`http://localhost:8000/yazarlar/guncelle/${duzenlenenYazarId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ ad: duzenAd, soyad: duzenSoyad })
+    })
+    if (cevap.ok) {
+      setDuzenlenenYazarId(null)
+      yazarlariGetir()
+    } else {
+      const hata = await cevap.json()
+      alert(hata.detail)
+    }
+  }
+
+  const duzenlemeyeBasla = (yazar) => {
+    setDuzenlenenYazarId(yazar.id)
+    setDuzenAd(yazar.ad)
+    setDuzenSoyad(yazar.soyad)
+  }
+
+  const duzenlemeyiIptalEt = () => {
+    setDuzenlenenYazarId(null)
+  }
   
 
  return (
@@ -180,10 +226,60 @@ function Anasayfa({ token }) {
             <p className="text-gray-500">Henüz Yazar Eklenmemiş</p>
           )}
           {yazarlar?.map((yazar) => (
-            <div key={yazar.id} className="border-b border-gray-200 py-2">
-              {yazar.ad} {yazar.soyad}
+            <div key ={yazar.id}
+              className="border-b border-gray-200 py-2">
+              {duzenlenenYazarId === yazar.id ? (
+                <div>
+                  <input
+                    type="text"
+                    value={duzenAd}
+                    onChange={(e) => setDuzenAd(e.target.value)}
+                    className="w-full border border-gray-300 rounded p-1 mb-1 text-sm"
+                    />
+                  
+                  <input
+                    type="text"
+                    value={duzenSoyad}
+                    onChange={(e) => setDuzenSoyad(e.target.value)}
+                    className="w-full border border-gray-300 rounded p-1 mb-1 text-sm"
+                    />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={yazarGuncelle}
+                      className="text-xs text-green-600 hover:underline">
+                        Kaydet
+                    </button>
+
+                    <button
+                      onClick={duzenlemeyiIptalEt} 
+                      className="text-xs text-gray-500 hover:underline">
+                        İptal
+                    </button>
+                  </div>
+                </div>
+                
+              ) : (
+                <div className="flex justify-between items-center">
+                  <span>{yazar.ad} {yazar.soyad}</span>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => duzenlemeyeBasla(yazar)}
+                      className="text-xs text-blue-600 hover:underline">
+                        Düzenle
+                    </button>
+                    <button
+                      onClick={() => yazarSil(yazar.id)}
+                      className="text-xs text-red-600 hover:underline">
+                        Sil
+                    </button>
+                    
+                  </div>
+                </div>
+
+              )}
             </div>
           ))}
+         
         </div>
         <div className="bg-white rounded-lg shadow-md p-6 mt-6">
           <h2 className="text-xl font-bold mb-4 text-gray-800">Ödünç Ver</h2>
