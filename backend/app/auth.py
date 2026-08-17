@@ -7,8 +7,8 @@ from jose import jwt, JWTError
 from passlib.context import CryptContext
 from sqlmodel import Session, select
 
-from database import get_session
-from models import Yonetici, KayitIstek, GirisIstek
+from app.database import get_session
+from app.models import Yonetici, KayitIstek, GirisIstek
 
 load_dotenv()
 

@@ -1,9 +1,9 @@
 import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel
-from database import get_engine, get_session
-import models
-import main
+from app.database import get_engine, get_session
+import app.models as models
+import app.main as main
 
 TEST_DB = "kutuphane_test_db"
 
