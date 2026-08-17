@@ -119,7 +119,10 @@ def kitap_sil(kitap_id: int, kullanici_adi: str = Depends(token_dogrula), sessio
     if kitap is None:
         raise HTTPException(status_code=404, detail="Kitap bulunamadı!")
     
-    sorgu = select(OduncKayitlar).where(OduncKayitlar.kitap_id == kitap_id)
+    sorgu = select(OduncKayitlar).where(
+        OduncKayitlar.kitap_id == kitap_id,
+        OduncKayitlar.iade_edildi_mi == False
+    )
     bagli_kayit = session.exec(sorgu).first()
     if bagli_kayit:
         raise HTTPException(status_code=409, detail="Bu kitaba ait ödünç kayıtları var, önce onları güncelleyin!")
@@ -182,7 +185,10 @@ def uye_sil(uye_id: int, kullanici_adi: str = Depends(token_dogrula), session: S
     if uye is None:
         raise HTTPException(status_code=404, detail="Üye bulunamadı!")
     
-    sorgu = select(OduncKayitlar).where(OduncKayitlar.uye_id == uye_id)
+    sorgu = select(OduncKayitlar).where(
+        OduncKayitlar.uye_id == uye_id,
+        OduncKayitlar.iade_edildi_mi == False
+    )
     bagli_kayit = session.exec(sorgu).first()
 
     if bagli_kayit:

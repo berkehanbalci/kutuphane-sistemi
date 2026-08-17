@@ -22,6 +22,11 @@ function Anasayfa({ token }) {
   const [duzenBaslik, setDuzenBaslik] = useState("")
   const [duzenStok, setDuzenStok] = useState("")
   const [duzenYazarId, setDuzenYazarId] = useState("")
+  const [duzenlenenUyeId, setDuzenlenenUyeId] = useState(null)
+  const [duzenUyeAd, setDuzenUyeAd] = useState("")
+  const [duzenUyeSoyad, setDuzenUyeSoyad] = useState("")
+  const [duzenUyeMail, setDuzenUyeMail] = useState("")
+
 
   const yazarlariGetir = async () => {
     const cevap = await fetch("http://localhost:8000/yazarlar")
@@ -177,6 +182,21 @@ function Anasayfa({ token }) {
       alert(hata.detail)
     }
   }
+  const uyeSil = async (uyeId) => {
+    const onay = window.confirm("Bu üyeyi silmek istediğinize emin misiniz?")
+    if (!onay) return
+
+    const cevap = await fetch(`http://localhost:8000/uyeler/${uyeId}`, {
+      method: "DELETE",
+      headers: { "Authorization": `Bearer ${token}` }
+    })
+    if (cevap.ok) {
+      uyeleriGetir()
+    } else {
+      const hata = await cevap.json()
+      alert(hata.detail)
+    }
+  }
 
   const yazarGuncelle = async () => {
     const cevap = await fetch(`http://localhost:8000/yazarlar/guncelle/${duzenlenenYazarId}`, {
@@ -214,6 +234,28 @@ function Anasayfa({ token }) {
     }
   }
 
+  const uyeGuncelle = async () => {
+    const cevap = await fetch(`http://localhost:8000/uyeler/guncelle/${duzenlenenUyeId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        ad: duzenUyeAd,
+        soyad: duzenUyeSoyad,
+        mail: duzenUyeMail
+      })
+    })
+    if (cevap.ok) {
+      setDuzenlenenUyeId(null)
+      uyeleriGetir()
+    } else {
+      const hata = await cevap.json()
+      alert(hata.detail)
+    }
+  }
+
   const duzenlemeyeBasla = (yazar) => {
     setDuzenlenenYazarId(yazar.id)
     setDuzenAd(yazar.ad)
@@ -227,12 +269,24 @@ function Anasayfa({ token }) {
     setDuzenYazarId(kitap.yazar_id)
   }
 
+  const uyeDuzenlemeyeBasla = (uye) => {
+    setDuzenlenenUyeId(uye.id)
+    setDuzenUyeAd(uye.ad)
+    setDuzenUyeSoyad(uye.soyad)
+    setDuzenUyeMail(uye.mail)
+  }
+  
+
   const duzenlemeyiIptalEt = () => {
     setDuzenlenenYazarId(null)
   }
 
   const kitapDuzenlemeyiIptalEt = () => {
     setDuzenlenenKitapId(null)
+  }
+
+  const uyeDuzenlemeyiIptalEt = () => {
+    setDuzenlenenUyeId(null)
   }
   
 
@@ -549,19 +603,66 @@ function Anasayfa({ token }) {
           {uyeler.length === 0 && (
             <p className="text-gray-500">Henüz Üye Eklenmemiş</p>
           )}
-          {uyeler.map((uye) => (
+          {uyeler?.map((uye) => (
             <div key={uye.id} className="border-b border-gray-200 py-2">
-              <div>
-                <span className="font-semibold">{uye.ad} {uye.soyad}</span>
-                <span className="text-sm text-gray-400"> — {uye.mail}</span>
-              </div>
-              {uye.odunc_kitaplari.length > 0 && (
-                <div className="ml-4 mt-1 text-sm text-gray-500">
-                  {uye.odunc_kitaplari.map((kayit, index) => (
-                    <div key={index}>
-                      {kayit.kitap_baslik} {kayit.iade_edildi_mi ? "(İade edildi)" : "(Ödünçte)"}
+              {duzenlenenUyeId === uye.id ? (
+                <div>
+                  <input
+                    type="text"
+                    value={duzenUyeAd}
+                    onChange={(e) => setDuzenUyeAd(e.target.value)}
+                    className="w-full border border-gray-300 rounded p-1 mb-1 text-sm"
+                  />
+                  <input
+                    type="text"
+                    value={duzenUyeSoyad}
+                    onChange={(e) => setDuzenUyeSoyad(e.target.value)}
+                    className="w-full border border-gray-300 rounded p-1 mb-1 text-sm"
+                  />
+                  <input
+                    type="email"
+                    value={duzenUyeMail}
+                    onChange={(e) => setDuzenUyeMail(e.target.value)}
+                    className="w-full border border-gray-300 rounded p-1 mb-1 text-sm"
+                  />
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={uyeGuncelle} 
+                      className="text-xs text-green-600 hover:underline">
+                      Kaydet
+                    </button>
+                    <button 
+                      onClick={uyeDuzenlemeyiIptalEt} 
+                      className="text-xs text-gray-500 hover:underline">
+                      İptal
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <span className="font-semibold">{uye.ad} {uye.soyad}</span>
+                      <span className="text-sm text-gray-400"> — {uye.mail}</span>
                     </div>
-                  ))}
+                    <div className="flex gap-2">
+                      <button onClick={() => uyeDuzenlemeyeBasla(uye)} className="text-xs text-blue-600 hover:underline">
+                        Düzenle
+                      </button>
+                      <button onClick={() => uyeSil(uye.id)} className="text-xs text-red-600 hover:underline">
+                        Sil
+                      </button>
+                    </div>
+                  </div>
+                  {uye.odunc_kitaplari?.length > 0 && (
+                    <div className="ml-4 mt-1 text-sm text-gray-500">
+                      {uye.odunc_kitaplari.map((kayit, index) => (
+                        <div key={index}>
+                          {kayit.kitap_baslik} {kayit.iade_edildi_mi ? "(İade edildi)" : "(Ödünçte)"}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
