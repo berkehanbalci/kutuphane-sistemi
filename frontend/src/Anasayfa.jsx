@@ -18,6 +18,10 @@ function Anasayfa({ token }) {
   const [duzenlenenYazarId, setDuzenlenenYazarId] = useState(null)
   const [duzenAd, setDuzenAd] = useState("")
   const [duzenSoyad, setDuzenSoyad] = useState("")
+  const [duzenlenenKitapId, setDuzenlenenKitapId] = useState(null)
+  const [duzenBaslik, setDuzenBaslik] = useState("")
+  const [duzenStok, setDuzenStok] = useState("")
+  const [duzenYazarId, setDuzenYazarId] = useState("")
 
   const yazarlariGetir = async () => {
     const cevap = await fetch("http://localhost:8000/yazarlar")
@@ -158,6 +162,22 @@ function Anasayfa({ token }) {
       alert(hata.detail)
     }
   }
+  const kitapSil = async (kitapId) => {
+    const onay = window.confirm("Bu kitabı silmek istediğinize emin misiniz?")
+    if (!onay) return
+
+    const cevap = await fetch(`http://localhost:8000/kitaplar/${kitapId}`, {
+      method: "DELETE",
+      headers: { "Authorization": `Bearer ${token}` }
+    })
+    if (cevap.ok) {
+      kitaplariGetir()
+    } else {
+      const hata = await cevap.json()
+      alert(hata.detail)
+    }
+  }
+
   const yazarGuncelle = async () => {
     const cevap = await fetch(`http://localhost:8000/yazarlar/guncelle/${duzenlenenYazarId}`, {
       method: "PUT",
@@ -176,14 +196,43 @@ function Anasayfa({ token }) {
     }
   }
 
+  const kitapGuncelle = async () => {
+    const cevap = await fetch(`http://localhost:8000/kitaplar/guncelle/${duzenlenenKitapId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ baslik: duzenBaslik, stok_adedi: duzenStok, yazar_id: duzenYazarId })
+    })
+    if (cevap.ok) {
+      setDuzenlenenKitapId(null)
+      kitaplariGetir()
+    } else {
+      const hata = await cevap.json()
+      alert(hata.detail)
+    }
+  }
+
   const duzenlemeyeBasla = (yazar) => {
     setDuzenlenenYazarId(yazar.id)
     setDuzenAd(yazar.ad)
     setDuzenSoyad(yazar.soyad)
   }
 
+  const kitapDuzenlemeyeBasla = (kitap) => {
+    setDuzenlenenKitapId(kitap.id)
+    setDuzenBaslik(kitap.baslik)
+    setDuzenStok(kitap.stok_adedi)
+    setDuzenYazarId(kitap.yazar_id)
+  }
+
   const duzenlemeyiIptalEt = () => {
     setDuzenlenenYazarId(null)
+  }
+
+  const kitapDuzenlemeyiIptalEt = () => {
+    setDuzenlenenKitapId(null)
   }
   
 
@@ -390,11 +439,70 @@ function Anasayfa({ token }) {
           {kitaplar.length === 0 && (
             <p className="text-gray-500">Henüz Kitap Eklenmemiş</p>
           )}
-          {kitaplar.map((kitap) => (
+          {kitaplar?.map((kitap) => (
             <div key={kitap.id} className="border-b border-gray-200 py-2">
-              <span className="font-semibold">{kitap.baslik}</span>
-              <span className="text-gray-500"> — {kitap.yazar_adi}</span>
-              <span className="text-sm text-gray-400"> (Stok: {kitap.stok_adedi})</span>
+              {duzenlenenKitapId === kitap.id ? (
+                <div>
+                  <input
+                    type="text"
+                    value={duzenBaslik}
+                    onChange={(e) => setDuzenBaslik(e.target.value)}
+                    className="w-full border border-gray-300 rounded p-1 mb-1 text-sm"
+                  />
+
+                  <input
+                    type="number"
+                    value={duzenStok}
+                    onChange={(e) => setDuzenStok(e.target.value)}
+                    className="w-full border border-gray-300 rounded p-1 mb-1 text-sm"
+                  />
+
+                  <select
+                    value={duzenYazarId}
+                    onChange={(e) => setDuzenYazarId(e.target.value)}
+                    className="w-full border border-gray-300 rounded p-1 mb-1 text-sm"
+                  >
+                    <option value=""Yazar seçin></option>
+                    {yazarlar?.map((yazar) => (
+                      <option key={yazar.id} value={yazar.id}>
+                        {yazar.ad} {yazar.soyad}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={kitapGuncelle}
+                      className="text-xs text-green-600 hover:underline">
+                        Kaydet
+                    </button>
+                    <button
+                      onClick={kitapDuzenlemeyiIptalEt}
+                      className="text-xs text-gray-500 hover:underline">
+                        İptal
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex justify-between items-center">
+                  <div>
+                    <span className="font-semibold">{kitap.baslik}</span>
+                    <span className="text-gray-500"> — {kitap.yazar_id}</span>
+                    <span className="text-sm text-gray-400"> (Stok: {kitap.stok_adedi})</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => kitapDuzenlemeyeBasla(kitap)}
+                      className="text-xs text-blue-600 hover:underline">
+                        Düzenle
+                    </button>
+                    <button
+                      onClick={() => kitapSil(kitap.id)}
+                      className="text-xs text-red-600 hover:underline">
+                        Sil
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
